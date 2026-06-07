@@ -27,3 +27,12 @@ output "scan_jobs_table_arn" {
   description = "ARN of the DynamoDB scan jobs table"
   value       = aws_dynamodb_table.scan_jobs.arn
 }
+
+output "dispatch_function_url" {
+  description = "Public URL for the Dispatch Lambda (GitHub webhook target)"
+  value       = aws_lambda_function_url.dispatch.function_url
+}
+
+output "dispatch_function_name" {
+  value = aws_lambda_function.dispatch.function_name
+}

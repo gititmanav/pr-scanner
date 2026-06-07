@@ -55,3 +55,39 @@ resource "aws_dynamodb_table" "scan_jobs" {
     projection_type = "ALL"
   }
 }
+
+# ---------------------------------------------------------
+# Dispatch Lambda + Function URL
+# ---------------------------------------------------------
+
+# Zip the handler code at apply time
+data "archive_file" "dispatch_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../lambdas/dispatch"
+  output_path = "${path.module}/dispatch.zip"
+}
+
+resource "aws_lambda_function" "dispatch" {
+  function_name = "${var.project}-dispatch"
+  role          = var.lab_role_arn
+  handler       = "handler.handler"
+  runtime       = "python3.12"
+  timeout       = 30
+
+  filename         = data.archive_file.dispatch_zip.output_path
+  source_code_hash = data.archive_file.dispatch_zip.output_base64sha256
+
+  environment {
+    variables = {
+      SCAN_JOBS_QUEUE_URL = aws_sqs_queue.scan_jobs.id
+      SCAN_JOBS_TABLE      = aws_dynamodb_table.scan_jobs.name
+      WEBHOOK_SECRET_NAME  = "cs6620/github-webhook-secret"
+    }
+  }
+}
+
+# Public HTTPS endpoint for GitHub's webhook
+resource "aws_lambda_function_url" "dispatch" {
+  function_name      = aws_lambda_function.dispatch.function_name
+  authorization_type = "NONE" # GitHub can't sign AWS-IAM requests; we verify via HMAC instead
+}

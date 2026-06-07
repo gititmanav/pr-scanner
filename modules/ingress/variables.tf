@@ -9,3 +9,8 @@ variable "region" {
   type        = string
   default     = "us-east-1"
 }
+
+variable "lab_role_arn" {
+  description = "ARN of the pre-existing LabRole"
+  type        = string
+}
