@@ -31,3 +31,16 @@ module "networking" {
   region  = var.region
   project = var.project
 }
+
+# ============================================
+# Scanner Module (Manav - Slice B)
+# ============================================
+module "scanner" {
+  source             = "./modules/scanner"
+  region             = var.region
+  project            = var.project
+  lab_role_arn       = data.aws_iam_role.lab.arn
+  subnet_id          = module.networking.public_subnet_id
+  security_group_id  = module.networking.scanner_security_group_id
+  account_id         = "771014276560"
+}
