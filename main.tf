@@ -10,7 +10,7 @@ terraform {
     bucket         = "cs6620-prscanner-tfstate-771014276560"
     key            = "pr-scanner/terraform.tfstate"
     region         = "us-east-1"
-    use_lockfile = "cs6620-prscanner-tflock"
+    dynamodb_table = "cs6620-prscanner-tflock"
     encrypt        = true
   }
 }
