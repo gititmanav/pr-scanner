@@ -20,3 +20,38 @@ resource "aws_sqs_queue" "scan_jobs" {
     maxReceiveCount     = 3
   })
 }
+
+# ---------------------------------------------------------
+# DynamoDB table — scan job records
+# PK = REPO#owner/repo, SK = SCAN#timestamp#pr_number
+# ---------------------------------------------------------
+resource "aws_dynamodb_table" "scan_jobs" {
+  name         = "${var.project}-scan-jobs"
+  billing_mode = "PAY_PER_REQUEST" # no capacity planning, effectively free at low volume
+
+  hash_key  = "PK"
+  range_key = "SK"
+
+  attribute {
+    name = "PK"
+    type = "S"
+  }
+
+  attribute {
+    name = "SK"
+    type = "S"
+  }
+
+  # GSI on status — lets you query "all PENDING/FAILED scans"
+  # (Sai's slice uses this heavily; harmless and useful to have here too)
+  attribute {
+    name = "status"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "status-index"
+    hash_key        = "status"
+    projection_type = "ALL"
+  }
+}
