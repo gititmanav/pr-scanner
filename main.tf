@@ -22,3 +22,12 @@ provider "aws" {
 data "aws_iam_role" "lab" {
   name = "LabRole"
 }
+
+# ============================================
+# Networking Module (Manav - Slice B)
+# ============================================
+module "networking" {
+  source  = "./modules/networking"
+  region  = var.region
+  project = var.project
+}
