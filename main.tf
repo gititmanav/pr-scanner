@@ -6,13 +6,6 @@ terraform {
       version = "~> 5.0"
     }
   }
-  backend "s3" {
-    bucket         = "cs6620-prscanner-tfstate-771014276560"
-    key            = "pr-scanner/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "cs6620-prscanner-tflock"
-    encrypt        = true
-  }
 }
 
 provider "aws" {
@@ -36,11 +29,22 @@ module "networking" {
 # Scanner Module (Manav - Slice B)
 # ============================================
 module "scanner" {
-  source             = "./modules/scanner"
-  region             = var.region
-  project            = var.project
-  lab_role_arn       = data.aws_iam_role.lab.arn
-  subnet_id          = module.networking.public_subnet_id
-  security_group_id  = module.networking.scanner_security_group_id
-  account_id         = "771014276560"
+  source            = "./modules/scanner"
+  region            = var.region
+  project           = var.project
+  lab_role_arn      = data.aws_iam_role.lab.arn
+  subnet_id         = module.networking.public_subnet_id
+  security_group_id = module.networking.scanner_security_group_id
+  account_id        = "771014276560"
+}
+
+# ============================================
+# Results Module (Sai - Slice C)
+# ============================================
+module "results" {
+  source       = "./modules/results"
+  project      = var.project
+  region       = var.region
+  lab_role_arn = data.aws_iam_role.lab.arn
+  alert_email  = var.alert_email
 }
