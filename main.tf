@@ -48,3 +48,11 @@ module "results" {
   lab_role_arn = data.aws_iam_role.lab.arn
   alert_email  = var.alert_email
 }
+
+#Slice A ingress
+module "ingress" {
+  source       = "./modules/ingress"
+  project      = var.project
+  region       = var.region
+  lab_role_arn = data.aws_iam_role.lab.arn
+}
