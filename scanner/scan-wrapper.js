@@ -16,6 +16,7 @@ const REPO_NAME      = process.env.REPO_NAME;
 const S3_BUCKET      = process.env.S3_BUCKET;
 const DYNAMODB_TABLE = process.env.DYNAMODB_TABLE || 'pr-scanner-jobs';
 const REGION         = process.env.AWS_DEFAULT_REGION || 'us-east-1';
+const TIMESTAMP      = process.env.TIMESTAMP;
 
 const s3 = new S3Client({ region: REGION });
 const dynamodb = new DynamoDBClient({ region: REGION });
@@ -107,7 +108,7 @@ async function main() {
       TableName: DYNAMODB_TABLE,
       Key: {
         PK: { S: `REPO#${REPO_OWNER}/${REPO_NAME}` },
-        SK: { S: `SCAN#${new Date(startedAt * 1000).toISOString()}#${PR_NUMBER}` }
+        SK: { S: `SCAN#${TIMESTAMP}#${PR_NUMBER}` }
       },
       UpdateExpression: 'SET #s = :s, findings_count = :fc, severity_breakdown = :sb, s3_report_key = :s3, started_at = :sa, finished_at = :fa',
       ExpressionAttributeNames: { '#s': 'status' },
@@ -131,7 +132,7 @@ async function main() {
         TableName: DYNAMODB_TABLE,
         Key: {
           PK: { S: `REPO#${REPO_OWNER}/${REPO_NAME}` },
-          SK: { S: `SCAN#${new Date(startedAt * 1000).toISOString()}#${PR_NUMBER}` }
+          SK: { S: `SCAN#${TIMESTAMP}#${PR_NUMBER}` }
         },
         UpdateExpression: 'SET #s = :s',
         ExpressionAttributeNames: { '#s': 'status' },

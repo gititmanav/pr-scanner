@@ -66,7 +66,9 @@ module "results" {
   project      = var.project
   region       = var.region
   lab_role_arn = data.aws_iam_role.lab.arn
-  alert_email  = var.alert_email
+  alert_email         = var.alert_email
+  reports_bucket      = local.reports_bucket
+  scanner_cluster_arn = module.scanner.ecs_cluster_arn
 }
 
 # ============================================
