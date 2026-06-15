@@ -8,7 +8,7 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 s3 = boto3.client('s3', region_name='us-east-1')
 secretsmanager = boto3.client('secretsmanager', region_name='us-east-1')
 
-TABLE_NAME = os.environ['DYNAMODB_TABLE']
+TABLE_NAME  = os.environ['DYNAMODB_TABLE']
 S3_BUCKET   = os.environ['S3_BUCKET']
 SECRET_NAME = os.environ.get('GITHUB_TOKEN_SECRET', 'cs6620/github-token')
 
@@ -33,11 +33,22 @@ def get_s3_report(s3_key):
     return json.loads(response['Body'].read().decode('utf-8'))
 
 
+def _overrides_env(event):
+    """Extract container env vars from ECS EventBridge event overrides."""
+    detail = event.get('detail', {})
+    out = {}
+    for c in detail.get('overrides', {}).get('containerOverrides', []):
+        for kv in c.get('environment', []):
+            out[kv.get('name')] = kv.get('value')
+    return out
+
+
 def format_pr_comment(record, report):
-    total = report['summary']['totalVulnerabilities']
-    high  = report['summary']['high']
-    med   = report['summary']['medium']
-    low   = report['summary']['low']
+    total = report.get('total_vulnerabilities', 0)
+    sev   = report.get('severity_breakdown', {})
+    high  = sev.get('HIGH', 0)
+    med   = sev.get('MEDIUM', 0)
+    low   = sev.get('LOW', 0)
 
     lines = [
         "## 🔍 PR Security Scan Results",
@@ -57,7 +68,7 @@ def format_pr_comment(record, report):
     lines += [
         "",
         f"*Scanned commit: `{record.get('commit_sha', 'unknown')}`*",
-        f"*Scan duration: {record.get('started_at','?')} → {record.get('finished_at','?')}*"
+        f"*Scan finished: {record.get('finished_at', '?')}*"
     ]
 
     return '\n'.join(lines)
@@ -83,33 +94,31 @@ def post_github_comment(token, repo_owner, repo_name, pr_number, comment):
 def lambda_handler(event, context):
     print(f"Event received: {json.dumps(event)}")
 
-    # Extract job_id from EventBridge event
-    detail = event.get('detail', {})
-    job_id = detail.get('jobId') or event.get('job_id', 'test-job-001')
+    ov         = _overrides_env(event)
+    job_id     = ov.get('JOB_ID')     or event.get('job_id')
+    repo_owner = ov.get('REPO_OWNER') or event.get('repo_owner')
+    repo_name  = ov.get('REPO_NAME')  or event.get('repo_name')
+    pr_number  = int(ov.get('PR_NUMBER') or event.get('pr_number', 0))
 
-    print(f"Processing job_id: {job_id}")
+    print(f"Processing job_id={job_id} repo={repo_owner}/{repo_name} pr={pr_number}")
 
-    # Get DynamoDB record
+    if not job_id:
+        raise Exception("Could not extract job_id from event")
+
     record = get_dynamodb_record(job_id)
     if not record:
         raise Exception(f"No DynamoDB record found for job_id: {job_id}")
 
-    # Get S3 report
+    repo_owner = repo_owner or record.get('repo_owner')
+    repo_name  = repo_name  or record.get('repo_name')
+    pr_number  = pr_number  or int(record.get('pr_number', 0))
+
     s3_key = record['s3_report_key']
     report = get_s3_report(s3_key)
 
-    # Format comment
     comment = format_pr_comment(record, report)
-
-    # Get GitHub token and post comment
-    token = get_github_token()
-    result = post_github_comment(
-        token,
-        record['repo_owner'],
-        record['repo_name'],
-        int(record['pr_number']),
-        comment
-    )
+    token   = get_github_token()
+    result  = post_github_comment(token, repo_owner, repo_name, pr_number, comment)
 
     print(f"Comment posted: {result.get('html_url')}")
     return {

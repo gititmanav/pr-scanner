@@ -1,6 +1,6 @@
 data "aws_caller_identity" "current" {}
 
-# DynamoDB Jobs Table
+# DynamoDB Jobs Table (owned by Sai)
 resource "aws_dynamodb_table" "jobs" {
   name         = "${var.project}-jobs"
   billing_mode = "PAY_PER_REQUEST"
@@ -33,16 +33,6 @@ resource "aws_dynamodb_table" "jobs" {
   }
 }
 
-# S3 Bucket for scan reports
-resource "aws_s3_bucket" "reports" {
-  bucket        = "${var.project}-reports-${data.aws_caller_identity.current.account_id}"
-  force_destroy = true
-
-  tags = {
-    Project = var.project
-  }
-}
-
 # Zip the Lambda code
 data "archive_file" "post_scan_zip" {
   type        = "zip"
@@ -63,7 +53,7 @@ resource "aws_lambda_function" "post_scan" {
   environment {
     variables = {
       DYNAMODB_TABLE      = aws_dynamodb_table.jobs.name
-      S3_BUCKET           = aws_s3_bucket.reports.bucket
+      S3_BUCKET           = var.reports_bucket
       GITHUB_TOKEN_SECRET = "cs6620/github-token"
     }
   }
@@ -73,17 +63,17 @@ resource "aws_lambda_function" "post_scan" {
   }
 }
 
-# EventBridge rule - triggers when Fargate task stops
+# EventBridge rule — scoped to Manav's cluster
 resource "aws_cloudwatch_event_rule" "fargate_stopped" {
   name        = "${var.project}-fargate-stopped"
-  description = "Triggers post-scan Lambda when Fargate task stops"
+  description = "Triggers post-scan Lambda when Fargate task stops on pr-scanner-cluster"
 
   event_pattern = jsonencode({
     source      = ["aws.ecs"]
     detail-type = ["ECS Task State Change"]
     detail = {
-      lastStatus    = ["STOPPED"]
-      stoppedReason = [{ prefix = "" }]
+      clusterArn = [var.scanner_cluster_arn]
+      lastStatus = ["STOPPED"]
     }
   })
 }
@@ -113,7 +103,7 @@ resource "aws_sns_topic_subscription" "email" {
   endpoint  = var.alert_email
 }
 
-# CloudWatch alarm - fires when DLQ or Lambda errors spike
+# CloudWatch alarm
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_name          = "${var.project}-post-scan-errors"
   comparison_operator = "GreaterThanThreshold"
@@ -144,12 +134,12 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
-          title       = "Post-Scan Lambda Invocations"
-          region      = var.region
-          metrics     = [["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.post_scan.function_name]]
-          period      = 300
-          stat        = "Sum"
-          view        = "timeSeries"
+          title   = "Post-Scan Lambda Invocations"
+          region  = var.region
+          metrics = [["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.post_scan.function_name]]
+          period  = 300
+          stat    = "Sum"
+          view    = "timeSeries"
           annotations = { horizontal = [] }
         }
       },
@@ -160,12 +150,12 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
-          title       = "Post-Scan Lambda Errors"
-          region      = var.region
-          metrics     = [["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.post_scan.function_name]]
-          period      = 300
-          stat        = "Sum"
-          view        = "timeSeries"
+          title   = "Post-Scan Lambda Errors"
+          region  = var.region
+          metrics = [["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.post_scan.function_name]]
+          period  = 300
+          stat    = "Sum"
+          view    = "timeSeries"
           annotations = { horizontal = [] }
         }
       },
@@ -176,12 +166,12 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
-          title       = "Post-Scan Lambda Duration"
-          region      = var.region
-          metrics     = [["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.post_scan.function_name]]
-          period      = 300
-          stat        = "Average"
-          view        = "timeSeries"
+          title   = "Post-Scan Lambda Duration"
+          region  = var.region
+          metrics = [["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.post_scan.function_name]]
+          period  = 300
+          stat    = "Average"
+          view    = "timeSeries"
           annotations = { horizontal = [] }
         }
       }
