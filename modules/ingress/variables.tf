@@ -14,3 +14,8 @@ variable "lab_role_arn" {
   description = "ARN of the pre-existing LabRole"
   type        = string
 }
+
+variable "dynamodb_table_name" {
+  description = "Name of the shared DynamoDB jobs table (created in the results module)"
+  type        = string
+}

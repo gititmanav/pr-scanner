@@ -11,7 +11,7 @@ resource "aws_sqs_queue" "scan_jobs_dlq" {
 # Main queue: Dispatch Lambda sends scan-job messages here
 resource "aws_sqs_queue" "scan_jobs" {
   name                       = "${var.project}-scan-jobs"
-  visibility_timeout_seconds = 300 # 5 min — how long a consumer holds a message before it reappears
+  visibility_timeout_seconds = 300    # 5 min — how long a consumer holds a message before it reappears
   message_retention_seconds  = 345600 # 4 days
 
   # If a message fails to process maxReceiveCount times, send it to the DLQ
@@ -22,39 +22,10 @@ resource "aws_sqs_queue" "scan_jobs" {
 }
 
 # ---------------------------------------------------------
-# DynamoDB table — scan job records
-# PK = REPO#owner/repo, SK = SCAN#timestamp#pr_number
+# DynamoDB table removed — the canonical jobs table lives in the results module
+# (Sai, "pr-scanner-jobs"). Dispatch references it by name via var.dynamodb_table_name.
+# See INTEGRATION_PLAN.md task V1.
 # ---------------------------------------------------------
-resource "aws_dynamodb_table" "scan_jobs" {
-  name         = "${var.project}-scan-jobs"
-  billing_mode = "PAY_PER_REQUEST" # no capacity planning, effectively free at low volume
-
-  hash_key  = "PK"
-  range_key = "SK"
-
-  attribute {
-    name = "PK"
-    type = "S"
-  }
-
-  attribute {
-    name = "SK"
-    type = "S"
-  }
-
-  # GSI on status — lets you query "all PENDING/FAILED scans"
-  # (Sai's slice uses this heavily; harmless and useful to have here too)
-  attribute {
-    name = "status"
-    type = "S"
-  }
-
-  global_secondary_index {
-    name            = "status-index"
-    hash_key        = "status"
-    projection_type = "ALL"
-  }
-}
 
 # ---------------------------------------------------------
 # Dispatch Lambda + Function URL
@@ -80,8 +51,8 @@ resource "aws_lambda_function" "dispatch" {
   environment {
     variables = {
       SCAN_JOBS_QUEUE_URL = aws_sqs_queue.scan_jobs.id
-      SCAN_JOBS_TABLE      = aws_dynamodb_table.scan_jobs.name
-      WEBHOOK_SECRET_NAME  = "cs6620/github-webhook-secret"
+      SCAN_JOBS_TABLE     = var.dynamodb_table_name
+      WEBHOOK_SECRET_NAME = "cs6620/github-webhook-secret"
     }
   }
 }

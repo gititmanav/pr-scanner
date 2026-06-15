@@ -144,12 +144,12 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
-          title   = "Post-Scan Lambda Invocations"
-          region  = var.region
-          metrics = [["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.post_scan.function_name]]
-          period  = 300
-          stat    = "Sum"
-          view    = "timeSeries"
+          title       = "Post-Scan Lambda Invocations"
+          region      = var.region
+          metrics     = [["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.post_scan.function_name]]
+          period      = 300
+          stat        = "Sum"
+          view        = "timeSeries"
           annotations = { horizontal = [] }
         }
       },
@@ -160,12 +160,12 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
-          title   = "Post-Scan Lambda Errors"
-          region  = var.region
-          metrics = [["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.post_scan.function_name]]
-          period  = 300
-          stat    = "Sum"
-          view    = "timeSeries"
+          title       = "Post-Scan Lambda Errors"
+          region      = var.region
+          metrics     = [["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.post_scan.function_name]]
+          period      = 300
+          stat        = "Sum"
+          view        = "timeSeries"
           annotations = { horizontal = [] }
         }
       },
@@ -176,12 +176,12 @@ resource "aws_cloudwatch_dashboard" "main" {
         width  = 8
         height = 6
         properties = {
-          title   = "Post-Scan Lambda Duration"
-          region  = var.region
-          metrics = [["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.post_scan.function_name]]
-          period  = 300
-          stat    = "Average"
-          view    = "timeSeries"
+          title       = "Post-Scan Lambda Duration"
+          region      = var.region
+          metrics     = [["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.post_scan.function_name]]
+          period      = 300
+          stat        = "Average"
+          view        = "timeSeries"
           annotations = { horizontal = [] }
         }
       }

@@ -405,6 +405,26 @@ Confirm and record what passed:
 - [ ] SQS message consumed; `pr-scanner-consumer` logs: "Launched scan task ..."
 - [ ] ECS console: a Fargate task started (may fail until Manav pushes the image — expected)
 
+### V5a — Consumer unit test (no AWS credentials needed)
+boto3 and the environment are stubbed, so this runs anywhere and verifies the override
+container name, env var names/formats, `TIMESTAMP` passthrough, and the failures-raises path:
+```bash
+python3 lambdas/sqs_consumer/test_handler.py
+```
+
+### V5b — Isolated consumer smoke test (needs creds; no webhook required)
+Once the stack is applied, test the consumer alone by dropping a contract-shaped message
+straight on the queue — you don't need dispatch or the GitHub webhook for this:
+```bash
+QURL=$(aws sqs get-queue-url --queue-name pr-scanner-scan-jobs --query QueueUrl --output text)
+aws sqs send-message --queue-url "$QURL" --message-body '{
+  "job_id":"test-001","repo_owner":"gititmanav","repo_name":"pr-scanner-test-target",
+  "pr_number":1,"commit_sha":"HEAD","branch":"main","timestamp":"2026-06-15T10:00:00Z"}'
+
+aws logs tail /aws/lambda/pr-scanner-consumer --follow   # expect: "Launched scan task arn:..."
+```
+Then confirm a task appears in the ECS console for `pr-scanner-cluster`.
+
 ---
 
 # PART 2 — HANDOFF to Manav (Slice B)
