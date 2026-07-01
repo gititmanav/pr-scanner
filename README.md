@@ -4,7 +4,7 @@
 
 Built for CS 6620 — Fundamentals of Cloud Computing, Northeastern University (Professor Aanchan Mohan, Summer 2026)
 
-> "Shift left" — catch vulnerabilities at the PR stage, not in production.
+> catch vulnerabilities at the PR stage, not in production.
 
 PR Scanner automatically scans every GitHub pull request for security vulnerabilities and posts the findings directly as a PR comment — in about 60 seconds — so developers can fix issues before merging instead of discovering them later.
 
@@ -76,8 +76,8 @@ The system is split into three independently owned slices:
 
 | Slice | Owner | Responsibility |
 |---|---|---|
-| **A — Ingress & Dispatch** | Vaishnavi Jariwala | Webhook intake, HMAC verification, job enqueueing |
-| **B — Scanner Core & Networking** | Manav Kaneria | VPC/networking, ECS Fargate scanner container |
+| **A — Ingress & Dispatch** |  Manav Kaneria | Webhook intake, HMAC verification, job enqueueing |
+| **B — Scanner Core & Networking** | Vaishnavi Jariwala | VPC/networking, ECS Fargate scanner container |
 | **C — Results & Observability** | Sai Vardhan Pathuri | Post-scan processing, GitHub comment posting, logging, alerting |
 
 ### Slice A — Ingress & Dispatch
@@ -342,8 +342,8 @@ This project was built against AWS Academy Learner Lab, which imposes some non-s
 
 | Team Member | Slice | Role |
 |---|---|---|
-| Vaishnavi Jariwala | Slice A | Ingress & Dispatch |
-| Manav Kaneria | Slice B | Scanner Core & Networking |
+| Manav Kaneria| Slice A | Ingress & Dispatch |
+| Vaishnavi Jariwala | Slice B | Scanner Core & Networking |
 | Sai Vardhan Pathuri | Slice C | Results & Observability |
 
 **Course:** CS 6620 — Fundamentals of Cloud Computing, Northeastern University
