@@ -11,3 +11,5 @@ local-dev/
 
 # OS
 .DS_Store
+# Node.js dependencies
+node_modules/
